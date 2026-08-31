@@ -1,8 +1,3 @@
-這個修改方向很好！把「吃吃看」的紅色警告色拿掉，讓它跟其他選項長得一模一樣，這樣學生在作答時就不會因為「顏色不同」而避開它，反而能更真實地測驗出他們是否有將「野外植物不可亂吃」的安全觀念放在心上。這是一個很棒的教學陷阱！
-
-我已經將「吃吃看」按鈕的樣式改回原本統一的綠色，請複製下方的最新程式碼：
-
-```html
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
@@ -40,7 +35,6 @@
     /* 遊戲區樣式 */
     .progress { font-size: 1.3em; font-weight: bold; color: #7cb342; margin-bottom: 20px; flex-shrink: 0; }
     
-    /* 敘述框放大，適應無圖片的排版 */
     .narrative-box { 
         background: #dcedc8; padding: 30px; border-radius: 12px; 
         font-size: clamp(20px, 3vh, 26px); font-weight: bold; line-height: 1.6; 
@@ -50,6 +44,8 @@
     .narrative-box .highlight { color: #1b5e20; background: #c5e1a5; padding: 2px 6px; border-radius: 4px; }
     
     .options { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; width: 90%; max-width: 600px; }
+    
+    /* 所有的感官按鈕統一為綠色 */
     .sense-btn {
         background-color: #8bc34a; color: white; border: none; padding: 20px;
         font-size: clamp(22px, 3vh, 28px); border-radius: 12px; cursor: pointer; font-weight: bold;
@@ -89,7 +85,6 @@
             <button class="sense-btn" onclick="checkAnswer('👀 仔細看')">👀 仔細看</button>
             <button class="sense-btn" onclick="checkAnswer('✋ 摸摸看')">✋ 摸摸看</button>
             <button class="sense-btn" onclick="checkAnswer('👃 聞聞看')">👃 聞聞看</button>
-            <!-- 顏色改回統一預設樣式，去除 danger 類別 -->
             <button class="sense-btn" onclick="checkAnswer('👅 吃吃看')">👅 吃吃看</button>
         </div>
         
@@ -197,7 +192,7 @@
         const feedbackBox = document.getElementById("feedbackBox");
         const btns = document.querySelectorAll(".sense-btn");
         
-        // 防呆機制：如果選了吃吃看，一樣跳出警告
+        // 防呆陷阱：點擊吃吃看會觸發嚴格的安全警告
         if (selectedSense === '👅 吃吃看') {
             feedbackBox.innerHTML = "❌ 警告！在野外或校園進行觀察時，絕對不能把任何植物放進嘴巴裡，以免中毒或引發嚴重過敏喔！請選擇其他安全的觀察方式。";
             feedbackBox.className = "wrong";
@@ -227,5 +222,3 @@
 </script>
 </body>
 </html>
-
-```
