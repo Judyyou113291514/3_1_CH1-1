@@ -1,12 +1,9 @@
-這份程式碼已經將所有的植物圖片替換為你提供的最新維基共享資源圖檔。
-
-```html
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>植物觀察行前特訓</title>
+<title>植物探究與觀察特訓</title>
 <style>
     /* 滿版不捲動設定 */
     html, body {
@@ -15,47 +12,57 @@
         display: flex; justify-content: center; align-items: center; color: #2e7d32;
     }
     .app-container {
-        width: 95vw; height: 95vh; max-width: 800px;
+        width: 95vw; height: 95vh; max-width: 900px;
         background: white; border-radius: 15px; box-shadow: 0 8px 16px rgba(0,0,0,0.1);
         display: flex; flex-direction: column; overflow: hidden;
     }
 
     /* 共用螢幕設定 */
-    .screen { display: none; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 100%; padding: 20px; box-sizing: border-box; text-align: center; }
+    .screen { display: none; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 100%; padding: 30px; box-sizing: border-box; text-align: center; }
     .active { display: flex; }
 
     h1 { color: #33691e; margin-bottom: 10px; font-size: clamp(24px, 4vh, 36px); }
-    p.subtitle { color: #558b2f; font-size: clamp(16px, 2.5vh, 22px); margin-bottom: 30px; }
+    p.subtitle { color: #558b2f; font-size: clamp(16px, 2.5vh, 22px); margin-bottom: 30px; line-height: 1.5; }
 
     /* 按鈕樣式 */
     .btn {
-        background-color: #ff9800; color: white; border: none; padding: 15px 30px;
+        background-color: #ff9800; color: white; border: none; padding: 15px 40px;
         font-size: clamp(18px, 2.5vh, 24px); border-radius: 8px; cursor: pointer; font-weight: bold;
         box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: 0.2s; margin: 10px;
     }
     .btn:hover { background-color: #f57c00; transform: scale(1.05); }
 
     /* 遊戲區樣式 */
-    .progress { font-size: 1.2em; font-weight: bold; color: #7cb342; margin-bottom: 15px; flex-shrink: 0; }
-    .plant-img { width: 100%; max-height: 30vh; object-fit: contain; border-radius: 10px; margin-bottom: 20px; flex-shrink: 0; }
-    .narrative-box { background: #dcedc8; padding: 20px; border-radius: 10px; font-size: clamp(18px, 2.5vh, 24px); font-weight: bold; line-height: 1.5; margin-bottom: 20px; width: 90%; }
+    .progress { font-size: 1.3em; font-weight: bold; color: #7cb342; margin-bottom: 20px; flex-shrink: 0; }
     
-    .options { display: flex; gap: 15px; justify-content: center; flex-wrap: wrap; width: 100%; }
-    .sense-btn {
-        background-color: #8bc34a; color: white; border: none; padding: 15px 25px;
-        font-size: clamp(20px, 3vh, 26px); border-radius: 50px; cursor: pointer; font-weight: bold;
-        transition: 0.2s; display: flex; align-items: center; gap: 8px;
+    /* 敘述框放大，適應無圖片的排版 */
+    .narrative-box { 
+        background: #dcedc8; padding: 30px; border-radius: 12px; 
+        font-size: clamp(20px, 3vh, 26px); font-weight: bold; line-height: 1.6; 
+        margin-bottom: 30px; width: 90%; text-align: left;
+        box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
     }
-    .sense-btn:hover { background-color: #689f38; }
-    .sense-btn:disabled { background-color: #c5e1a5; cursor: not-allowed; transform: none; }
+    .narrative-box .highlight { color: #1b5e20; background: #c5e1a5; padding: 2px 6px; border-radius: 4px; }
+    
+    .options { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; width: 90%; max-width: 600px; }
+    .sense-btn {
+        background-color: #8bc34a; color: white; border: none; padding: 20px;
+        font-size: clamp(22px, 3vh, 28px); border-radius: 12px; cursor: pointer; font-weight: bold;
+        transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 10px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    .sense-btn:hover { background-color: #689f38; transform: translateY(-3px); }
+    .sense-btn:disabled { background-color: #c5e1a5; cursor: not-allowed; transform: none; box-shadow: none; }
+    .sense-btn.danger { background-color: #ff5252; }
+    .sense-btn.danger:hover { background-color: #e53935; }
 
-    #feedbackBox { margin-top: 20px; min-height: 50px; font-size: 1.3em; font-weight: bold; }
+    #feedbackBox { margin-top: 25px; min-height: 60px; font-size: clamp(18px, 2.5vh, 22px); font-weight: bold; line-height: 1.4; width: 90%; }
     .correct { color: #2e7d32; }
     .wrong { color: #c62828; }
     
     /* 安全守則區樣式 */
-    .rules-list { text-align: left; background: #fff3e0; padding: 30px; border-radius: 10px; border-left: 8px solid #ff9800; width: 85%; }
-    .rules-list p { font-size: clamp(18px, 2.5vh, 24px); font-weight: bold; color: #e65100; margin: 15px 0; line-height: 1.5; display: flex; align-items: flex-start; gap: 10px; }
+    .rules-list { text-align: left; background: #fff3e0; padding: 30px; border-radius: 10px; border-left: 8px solid #ff9800; width: 90%; max-width: 700px; }
+    .rules-list p { font-size: clamp(18px, 2.5vh, 22px); font-weight: bold; color: #e65100; margin: 18px 0; line-height: 1.5; display: flex; align-items: flex-start; gap: 12px; }
 </style>
 </head>
 <body>
@@ -64,41 +71,41 @@
 
     <!-- 畫面 1：開始畫面 -->
     <div id="startScreen" class="screen active">
-        <h1>🌱 觀察植物，你用對方法了嗎？</h1>
-        <p class="subtitle">不同的植物特徵，需要不同的感官來幫忙。<br>準備好測試你的觀察力了嗎？</p>
-        <button class="btn" onclick="startGame()">🚀 開始特訓</button>
+        <h1>🌱 植物探究與觀察特訓</h1>
+        <p class="subtitle">在自然科學的探究過程中，科學家會根據不同的目的，選擇最適合的觀察方法。<br>面對下列的探究情境，你會選擇哪一種感官來收集證據呢？</p>
+        <button class="btn" onclick="startGame()">🚀 接受挑戰</button>
     </div>
 
     <!-- 畫面 2：遊戲任務區 -->
     <div id="gameScreen" class="screen">
-        <div class="progress" id="progressDisplay">任務進度: 1 / 10</div>
-        <img id="plantImg" class="plant-img" src="" alt="植物圖片">
+        <div class="progress" id="progressDisplay">探究任務: 1 / 10</div>
         
         <div class="narrative-box" id="narrativeDisplay">敘述載入中...</div>
         
         <div class="options" id="optionsContainer">
-            <button class="sense-btn" onclick="checkAnswer('👀 看')">👀 用眼睛看</button>
-            <button class="sense-btn" onclick="checkAnswer('✋ 摸')">✋ 用手摸摸</button>
-            <button class="sense-btn" onclick="checkAnswer('👃 聞')">👃 用鼻子聞</button>
+            <button class="sense-btn" onclick="checkAnswer('👀 仔細看')">👀 仔細看</button>
+            <button class="sense-btn" onclick="checkAnswer('✋ 摸摸看')">✋ 摸摸看</button>
+            <button class="sense-btn" onclick="checkAnswer('👃 聞聞看')">👃 聞聞看</button>
+            <button class="sense-btn danger" onclick="checkAnswer('👅 吃吃看')">👅 吃吃看</button>
         </div>
         
         <div id="feedbackBox"></div>
-        <button class="btn" id="nextBtn" onclick="nextQuestion()" style="display: none;">➡️ 下一題</button>
+        <button class="btn" id="nextBtn" onclick="nextQuestion()" style="display: none; margin-top: 15px;">➡️ 前往下一個任務</button>
     </div>
 
     <!-- 畫面 3：安全守則區 -->
     <div id="endScreen" class="screen">
-        <h1>⚠️ 出發前的最後叮嚀！</h1>
-        <p class="subtitle">恭喜完成特訓！在去校園尋找植物前，請大聲唸出這四個安全守則：</p>
+        <h1>⚠️ 戶外觀察安全守則</h1>
+        <p class="subtitle">恭喜你具備了科學家的觀察力！在出發前往校園探究前，請大聲唸出這四個安全守則：</p>
         
         <div class="rules-list">
-            <p><span>🧼</span> <span><b>勤洗手：</b>觀察結束後，一定要用肥皂把手洗乾淨。</span></p>
-            <p><span>🚫</span> <span><b>絕對不吃：</b>不可以把任何來路不明的葉子或果實放進嘴巴裡！</span></p>
-            <p><span>💨</span> <span><b>用搧的聞：</b>想聞植物氣味時，不要把鼻子貼上去，要用手輕輕將氣味「搧」過來。</span></p>
-            <p><span>⚠️</span> <span><b>注意安全：</b>在校園觀察時，注意腳下濕滑，並小心周遭的蚊蟲與尖刺植物。</span></p>
+            <p><span>🧼</span> <span><b>勤洗手：</b>觀察結束回到教室後，第一件事就是用肥皂把手洗乾淨。</span></p>
+            <p><span>🚫</span> <span><b>絕對不吃：</b>無論植物看起來多像可以吃的果實，未經老師許可，絕對不可放進嘴裡！</span></p>
+            <p><span>💨</span> <span><b>用搧的聞：</b>想聞植物氣味時，不可把鼻子直接貼上去，要用手輕輕將氣味「搧」過來。</span></p>
+            <p><span>⚠️</span> <span><b>注意安全：</b>在校園觀察時，注意腳下濕滑與青苔，並小心周遭的蚊蟲與長有尖刺的植物。</span></p>
         </div>
         
-        <button class="btn" onclick="location.reload()" style="margin-top: 30px;">🔄 再複習一次</button>
+        <button class="btn" onclick="location.reload()" style="margin-top: 30px;">🔄 再次進行特訓</button>
     </div>
 
 </div>
@@ -106,54 +113,54 @@
 <script>
     const quizData = [
         { 
-            plant: "含羞草", img: "https://commons.wikimedia.org/wiki/Special:FilePath/Mimosa%20pudica%20MHNT.BOT.2004.0.0.495.jpg?width=800",
-            narrative: "你找到了一株含羞草，你想知道它的葉子碰到後會不會馬上閉合起來，你該用什麼感官？", 
-            answer: "✋ 摸", feedback: "✅ 答對了！輕輕碰一下葉片，觀察它有趣的閉合反應吧！"
+            plant: "含羞草", 
+            narrative: "小明在草地上發現一株葉子像羽毛的<span class='highlight'>含羞草</span>。他好奇如果遭遇強風或外力干擾，這株植物會有什麼自我保護的反應。為了驗證這個假設，他應該怎麼做最能直接收集到證據？", 
+            answer: "✋ 摸摸看", feedback: "✅ 答對了！輕輕觸碰葉片，觀察它因為細胞水分變化而產生的閉合反應，這是最直接的探究方式。"
         },
         { 
-            plant: "豬籠草", img: "https://commons.wikimedia.org/wiki/Special:FilePath/NEPENTHES%20MIRABILIS%20TANJUNG%20PUTING%20NATIONAL%20PARK.jpg?width=800",
-            narrative: "這是一株豬籠草，你想找出它用來抓昆蟲的「捕蟲籠」長在葉子的哪個部位，你該用什麼感官？", 
-            answer: "👀 看", feedback: "✅ 答對了！用眼睛仔細觀察葉子的末端，就能找到瓶狀的捕蟲籠喔！"
+            plant: "豬籠草", 
+            narrative: "自然課講到有些植物會演化出捕捉昆蟲的構造來補充營養。如果你在溫室裡看到一盆<span class='highlight'>豬籠草</span>，想確認它的「捕蟲籠」是從葉子的哪一個部位延伸長出來的，你該如何收集這個資訊？", 
+            answer: "👀 仔細看", feedback: "✅ 答對了！運用視覺仔細追蹤葉脈的走向，就能發現捕蟲籠其實是葉子末端特化而成的構造喔！"
         },
         { 
-            plant: "牽牛花", img: "https://commons.wikimedia.org/wiki/Special:FilePath/Ipomoea%20purpurea%20flowers.jpg?width=800",
-            narrative: "這朵攀爬在欄杆上的牽牛花長得像小喇叭，你想知道它會不會散發出花香，你該用什麼感官？", 
-            answer: "👃 聞", feedback: "✅ 答對了！記得要用手輕輕「搧」聞，不要把鼻子直接貼在花朵上喔！"
+            plant: "牽牛花", 
+            narrative: "小華觀察到<span class='highlight'>牽牛花</span>總是沿著籬笆攀爬，且花朵呈現鮮豔的漏斗狀。他想進一步探究這種花是否會利用特殊的氣味來吸引特定昆蟲前來授粉，他應該採取什麼行動？", 
+            answer: "👃 聞聞看", feedback: "✅ 答對了！想知道有沒有香氣，聞一聞是最好的方法。但記得要用手輕輕「搧」聞，不要把鼻子直接貼在花朵上喔！"
         },
         { 
-            plant: "布袋蓮", img: "https://commons.wikimedia.org/wiki/Special:FilePath/Eichhornia%20crassipes%20001.JPG?width=800",
-            narrative: "你想確認布袋蓮膨大的葉柄裡面，是不是真的像海綿一樣軟軟的、充滿氣室，你該用什麼感官？", 
-            answer: "✋ 摸", feedback: "✅ 答對了！用手指輕輕捏捏看葉柄，感受它充滿空氣的彈性。"
+            plant: "布袋蓮", 
+            narrative: "老師提到漂浮在水面的<span class='highlight'>布袋蓮</span>，是因為它的葉柄內部具有像海綿一樣的特殊「氣室」構造。如果你想驗證這個構造的質地與彈性，最適合用哪一種方式探究？", 
+            answer: "✋ 摸摸看", feedback: "✅ 答對了！用手指輕輕捏捏看膨大的葉柄，你就能感受到它充滿空氣的彈性結構。"
         },
         { 
-            plant: "仙人掌", img: "https://commons.wikimedia.org/wiki/Special:FilePath/Opuntia%20ficus-indica%20in%20Myanmar.jpg?width=800",
-            narrative: "這是一盆生長在沙漠的仙人掌，你想知道它的葉子退化成了什麼形狀，你該用什麼感官？", 
-            answer: "👀 看", feedback: "✅ 答對了！用眼睛看就好，千萬別用手摸，以免被尖刺刺傷喔！"
+            plant: "仙人掌", 
+            narrative: "為了適應沙漠的乾旱環境，<span class='highlight'>仙人掌</span>的葉片退化了，莖部則變得肥厚以儲存水分。你想觀察它退化後的葉片長什麼樣子，在考量安全的前提下，你應該選擇哪一種觀察方式？", 
+            answer: "👀 仔細看", feedback: "✅ 答對了！對於長滿尖刺的植物，保持距離「用眼觀察」是保護自己不受傷的最重要原則！"
         },
         { 
-            plant: "榕樹", img: "https://commons.wikimedia.org/wiki/Special:FilePath/Starr%20040514-0204%20Ficus%20microcarpa.jpg?width=800",
-            narrative: "校園裡的榕樹垂下了許多長長的「氣根」，你想知道這些氣根摸起來是粗糙還是平滑的，你該用什麼感官？", 
-            answer: "✋ 摸", feedback: "✅ 答對了！輕輕摸摸看垂下來的氣根，感受它的觸感。"
+            plant: "榕樹", 
+            narrative: "學校操場旁有一棵巨大的<span class='highlight'>榕樹</span>，樹枝上懸掛著許多褐色的線，老師說那是它的「氣根」。你想知道這些氣根的表面是粗糙還是光滑的，你應該怎麼做？", 
+            answer: "✋ 摸摸看", feedback: "✅ 答對了！物體表面的質地（粗糙或光滑）需要透過觸覺來感知，輕輕摸摸看就能得到答案。"
         },
         { 
-            plant: "臺灣欒樹", img: "https://commons.wikimedia.org/wiki/Special:FilePath/Koelreuteria%20elegans.jpg?width=800",
-            narrative: "秋天到了，臺灣欒樹結出了像紅色小燈籠一樣的果實，你想知道這個果實有沒有特殊的味道，你該用什麼感官？", 
-            answer: "👃 聞", feedback: "✅ 答對了！可以撿起掉在地上的果實，用手搧一搧聞聞看有沒有味道。"
+            plant: "臺灣欒樹", 
+            narrative: "秋天時，<span class='highlight'>臺灣欒樹</span>的枝頭掛滿了紅色的小燈籠（蒴果）。小玲撿起一顆掉落在地上的蒴果，想知道它除了鮮豔的顏色外，是否還有散發什麼特殊氣息，她可以怎麼做？", 
+            answer: "👃 聞聞看", feedback: "✅ 答對了！將掉落的果實撿起，用手搧一搧聞聞看，是認識植物特性的好方法。"
         },
         { 
-            plant: "睡蓮", img: "https://commons.wikimedia.org/wiki/Special:FilePath/Nymphaea%20alba.jpg?width=800",
-            narrative: "你想在生態池尋找睡蓮，想確認這片浮在水面上的葉子邊緣有沒有「V字型的缺口」，你該用什麼感官？", 
-            answer: "👀 看", feedback: "✅ 答對了！用眼睛仔細對比葉片的形狀特徵。"
+            plant: "睡蓮", 
+            narrative: "生態池裡有許多浮水植物，你想透過特徵分類找出哪一株是<span class='highlight'>睡蓮</span>。圖鑑上說睡蓮的葉片邊緣有一個明顯的「V字型缺口」，你該如何確認池中的植物是否符合這個特徵？", 
+            answer: "👀 仔細看", feedback: "✅ 答對了！對比植物的外觀形狀與圖鑑特徵，是科學分類中最基礎也最重要的視覺觀察法。"
         },
         { 
-            plant: "大萍", img: "https://commons.wikimedia.org/wiki/Special:FilePath/Pistia%20%28water%20cabbage%2C%20water%20lettuce%29%20%2842916704942%29.jpg?width=800",
-            narrative: "大萍的葉子表面佈滿了防水的細絨毛，你想感受一下這些細絨毛摸起來是什麼感覺，你該用什麼感官？", 
-            answer: "✋ 摸", feedback: "✅ 答對了！輕輕摸一下大萍的葉面，體會它奇妙的防水構造。"
+            plant: "大萍", 
+            narrative: "課本提到水生植物<span class='highlight'>大萍</span>的葉片表面具有極佳的防水性，會讓水珠在上面滾動。為了感受這種防水構造的表面質地是否帶有特殊的「絨毛感」，你應該採取什麼行動？", 
+            answer: "✋ 摸摸看", feedback: "✅ 答對了！透過指尖輕輕觸摸，你可以感受到大萍葉面上細緻的絨毛，這就是它防水的秘密。"
         },
         { 
-            plant: "向日葵", img: "https://commons.wikimedia.org/wiki/Special:FilePath/Sunflower%20%28220606781%29.jpeg?width=800",
-            narrative: "你想看清楚這朵巨大向日葵中心，那一顆顆種子（瓜子）排列的幾何圖形，你該用什麼感官？", 
-            answer: "👀 看", feedback: "✅ 答對了！用眼睛近距離觀察大自然神奇的幾何排列！"
+            plant: "向日葵", 
+            narrative: "我們常吃的「葵瓜子」其實是<span class='highlight'>向日葵</span>的果實。你想探究一朵巨大的向日葵花盤中，種子是如何以數學般的「幾何螺旋形狀」緊密排列的，你應該怎麼做？", 
+            answer: "👀 仔細看", feedback: "✅ 答對了！大自然充滿了奇妙的數學規律，用眼睛近距離仔細觀察，你就會發現向日葵種子的排列之美！"
         }
     ];
 
@@ -161,7 +168,6 @@
     let shuffledQuiz = [];
 
     function startGame() {
-        // 隨機打亂題目順序
         shuffledQuiz = quizData.sort(() => 0.5 - Math.random());
         currentQuestion = 0;
         document.getElementById("startScreen").classList.remove("active");
@@ -171,14 +177,13 @@
 
     function loadQuestion() {
         const data = shuffledQuiz[currentQuestion];
-        document.getElementById("progressDisplay").innerText = `任務進度: ${currentQuestion + 1} / 10`;
-        document.getElementById("plantImg").src = data.img;
-        document.getElementById("narrativeDisplay").innerText = data.narrative;
+        document.getElementById("progressDisplay").innerText = `探究任務: ${currentQuestion + 1} / 10`;
+        document.getElementById("narrativeDisplay").innerHTML = data.narrative;
         
         document.getElementById("feedbackBox").innerText = "";
+        document.getElementById("feedbackBox").className = "";
         document.getElementById("nextBtn").style.display = "none";
         
-        // 恢復所有按鈕狀態
         const btns = document.querySelectorAll(".sense-btn");
         btns.forEach(btn => btn.disabled = false);
     }
@@ -188,13 +193,20 @@
         const feedbackBox = document.getElementById("feedbackBox");
         const btns = document.querySelectorAll(".sense-btn");
         
+        // 防呆機制：嚴格禁止選「吃吃看」
+        if (selectedSense === '👅 吃吃看') {
+            feedbackBox.innerHTML = "❌ 警告！在野外或校園進行觀察時，絕對不能把任何植物放進嘴巴裡，以免中毒或引發嚴重過敏喔！請選擇其他安全的觀察方式。";
+            feedbackBox.className = "wrong";
+            return; // 不鎖定按鈕，讓學生重選
+        }
+
         if (selectedSense === data.answer) {
             feedbackBox.innerHTML = data.feedback;
             feedbackBox.className = "correct";
             document.getElementById("nextBtn").style.display = "block";
-            btns.forEach(btn => btn.disabled = true); // 答對後鎖定按鈕
+            btns.forEach(btn => btn.disabled = true); 
         } else {
-            feedbackBox.innerHTML = `❌ 不太對喔！再想一下，這個動作該用什麼感官？`;
+            feedbackBox.innerHTML = `❌ 這個方法不太適合喔！為了達到探究的目的，再想想看哪一種感官最直接有效？`;
             feedbackBox.className = "wrong";
         }
     }
@@ -202,7 +214,6 @@
     function nextQuestion() {
         currentQuestion++;
         if (currentQuestion >= shuffledQuiz.length) {
-            // 切換至安全守則畫面
             document.getElementById("gameScreen").classList.remove("active");
             document.getElementById("endScreen").classList.add("active");
         } else {
@@ -212,5 +223,3 @@
 </script>
 </body>
 </html>
-
-```
