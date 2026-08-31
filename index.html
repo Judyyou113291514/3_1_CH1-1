@@ -3,172 +3,142 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>植物猜猜我是誰 - 計分挑戰版</title>
+<title>植物觀察配對遊戲</title>
 <style>
-    body { font-family: '微軟正黑體', sans-serif; background-color: #f1f8e9; color: #33691e; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 20px; box-sizing: border-box; }
-    .game-board { background: white; width: 100%; max-width: 600px; padding: 25px; border-radius: 15px; box-shadow: 0 8px 16px rgba(0,0,0,0.1); text-align: center; position: relative; }
-    .score-board { position: absolute; top: 20px; right: 25px; font-size: 1.2em; font-weight: bold; background: #ffca28; padding: 8px 15px; border-radius: 20px; color: #5d4037; }
-    h1 { margin-top: 10px; color: #558b2f; font-size: 1.8em; }
-    .progress { font-size: 0.9em; color: #7cb342; margin-bottom: 15px; }
-    .clue-box { background: #dcedc8; min-height: 100px; padding: 20px; border-radius: 10px; margin-bottom: 20px; text-align: left; font-size: 1.1em; line-height: 1.6; }
-    .plant-image { width: 100%; max-height: 250px; object-fit: cover; border-radius: 10px; margin-bottom: 15px; display: none; }
-    .options { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; }
-    .btn { background-color: #7cb342; color: white; border: none; padding: 12px; font-size: 1.1em; border-radius: 8px; cursor: pointer; transition: 0.2s; font-weight: bold; }
-    .btn:hover { background-color: #689f38; }
-    .btn:disabled { background-color: #c5e1a5; cursor: not-allowed; }
-    .action-btn { background-color: #ff9800; }
-    .action-btn:hover { background-color: #f57c00; }
-    #message { font-size: 1.2em; font-weight: bold; margin-top: 15px; min-height: 30px; }
-    .correct { color: #2e7d32; }
-    .wrong { color: #c62828; }
+    body { font-family: '微軟正黑體', sans-serif; background-color: #e8f5e9; color: #2e7d32; display: flex; flex-direction: column; align-items: center; padding: 20px; margin: 0; min-height: 100vh; }
+    h1 { color: #33691e; margin-bottom: 5px; }
+    p.subtitle { color: #558b2f; margin-top: 0; margin-bottom: 20px; font-weight: bold; }
+    .status-board { display: flex; gap: 20px; font-size: 1.2em; font-weight: bold; background: #fff; padding: 10px 20px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 20px; }
+    
+    .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; max-width: 800px; width: 100%; }
+    @media (max-width: 600px) { .grid { grid-template-columns: repeat(2, 1fr); } }
+
+    .card { background-color: #aed581; height: 120px; border-radius: 10px; display: flex; justify-content: center; align-items: center; text-align: center; padding: 15px; font-size: 1.1em; font-weight: bold; color: transparent; cursor: pointer; transition: transform 0.3s, background-color 0.3s; box-shadow: 0 4px 8px rgba(0,0,0,0.1); user-select: none; }
+    .card.flipped { background-color: #ffffff; color: #1b5e20; transform: rotateY(0deg); cursor: default; border: 3px solid #7cb342; }
+    .card.matched { background-color: #c8e6c9; color: #1b5e20; border: 3px solid #388e3c; opacity: 0.8; cursor: default; }
+    
+    .btn { background-color: #ff9800; color: white; border: none; padding: 12px 24px; font-size: 1.1em; border-radius: 8px; cursor: pointer; font-weight: bold; margin-top: 30px; display: none; }
+    .btn:hover { background-color: #f57c00; }
 </style>
 </head>
 <body>
 
-<div class="game-board">
-    <div class="score-board">分數: <span id="scoreDisplay">0</span></div>
-    <h1>🌱 植物猜猜我是誰</h1>
-    <div class="progress" id="progressDisplay">題目: 1 / 10</div>
-    
-    <img id="plantImg" class="plant-image" src="" alt="植物圖片">
-    <div class="clue-box" id="clueDisplay">點擊下方按鈕獲取第一個提示！</div>
-    
-    <button class="btn action-btn" id="nextClueBtn" onclick="showNextClue()">🔍 給我一個提示</button>
-    
-    <div class="options" id="optionsContainer" style="display: none; margin-top: 20px;"></div>
-    
-    <div id="message"></div>
-    <button class="btn action-btn" id="nextPlantBtn" onclick="nextQuestion()" style="display: none; margin-top: 10px;">➡️ 下一題</button>
+<h1>🌿 植物觀察配對任務</h1>
+<p class="subtitle">找出「觀察方法」與對應的「植物」！</p>
+
+<div class="status-board">
+    <span>翻牌次數: <span id="moves">0</span></span>
+    <span>完成配對: <span id="matches">0</span> / 10</span>
 </div>
 
+<div class="grid" id="gameBoard"></div>
+
+<button class="btn" id="restartBtn" onclick="initGame()">🔄 再玩一次</button>
+
 <script>
-    const plantsData = [
-        { name: "向日葵", img: "https://d2u1z1lopyfwlx.cloudfront.net/thumbnails/87710310-4057-575b-ab48-124da79c4884/2fdf7415-58ca-5674-a205-fcefffcee2a0.jpg", clues: ["我的花序會跟著太陽轉動。", "我的花瓣是鮮黃色的，非常顯眼。", "我結出的種子可以炒來吃，叫做「瓜子」。"] },
-        { name: "榕樹", img: "https://upload.wikimedia.org/wikipedia/commons/8/82/Ficus_microcarpa_leaves_and_fruits.jpg", clues: ["我是一棵高大的樹，常出現在校園裡。", "我的葉子是橢圓形的，表面綠綠亮亮的。", "我的樹枝上會長出很多長長的「鬍鬚」（氣根）。"] },
-        { name: "含羞草", img: "https://st.perplexity.ai/estatic/0b226c450798410ac541646c86ec31afd840e5beab817a5d84fa821e7db61981ec84c3b4a3f072a7a2e1899c9fb06c6ef7b192ddc2f6621970bdbfed44614918a0ec5516ae9e079aae8a22ebc15b0c636f7a40c2513e486f4ccecfb99539d5090491ab525bf73729ab02faf195a4efc6", clues: ["我的葉子是羽毛狀的排列。", "我開的花像粉紅色的小絨球。", "如果你的手碰到我，我的葉子會馬上閉合下垂！"] },
-        { name: "豬籠草", img: "https://d2u1z1lopyfwlx.cloudfront.net/thumbnails/159727e6-06b2-5719-80d4-85adf0ea4548/b8082786-a487-52ff-ba65-f8daadc3cfef.jpg", clues: ["我生長在土壤養分很少的地方。", "我的葉子末端會長出一個像瓶子一樣的構造。", "我會分泌蜜汁吸引昆蟲掉進來，消化牠們補充營養！"] },
-        { name: "睡蓮", img: "https://upload.wikimedia.org/wikipedia/commons/4/4f/Nymphaea_alba_1.jpg", clues: ["我是一種生長在水裡的「浮水植物」。", "我的葉子有一個 V 字型的缺口，平貼在水面上。", "我的花白天會打開，到了晚上就會閉合起來。"] },
-        { name: "臺灣欒樹", img: "https://upload.wikimedia.org/wikipedia/commons/8/84/Koelreuteria_elegans_subsp._formosana_01.jpg", clues: ["我是台灣特有的植物，常被種在馬路邊當行道樹。", "秋天時，我會開出黃色的花朵。", "花謝後，會結出像紅色小燈籠一樣的果實（蒴果）。"] },
-        { name: "仙人掌", img: "https://upload.wikimedia.org/wikipedia/commons/7/7b/Opuntia_ficus-indica_1.jpg", clues: ["我通常住在很熱、很少下雨的沙漠裡。", "我的莖很肥厚，裡面可以儲存很多水分。", "為了減少水分流失，我的葉子退化成尖尖的刺！"] },
-        { name: "布袋蓮", img: "https://d2u1z1lopyfwlx.cloudfront.net/thumbnails/28b320c6-aea8-58bd-916d-4d41e16f77f5/51e7eb76-e93f-5be1-ac0e-d17677e320ff.jpg", clues: ["我是一種漂浮在水面上的植物。", "我會開出美麗的淡紫色花朵。", "我的葉柄膨大像海綿一樣，裡面有氣室可以幫助我浮在水上。"] },
-        { name: "牽牛花", img: "https://upload.wikimedia.org/wikipedia/commons/8/85/Ipomoea_purpurea_flowers.jpg", clues: ["我有細長的蔓性莖，會攀爬在欄杆或籬笆上。", "我的花朵長得像一個小喇叭。", "我通常在清晨開花，到了中午就會慢慢閉合。"] },
-        { name: "大萍", img: "https://d2u1z1lopyfwlx.cloudfront.net/thumbnails/ac6729ea-37fd-5ad9-9500-1fdaeb70f538/0af98422-8d5d-5204-9f00-361f34eddb23.jpg", clues: ["我生長在水面上，是一種漂浮植物。", "我的葉子表面有許多細毛，可以防水。", "我的外觀長得就像一朵漂在水上的綠色高麗菜（又叫水芙蓉）。"] }
+    const pairsData = [
+        { id: 1, action: "✋ 觸摸：輕碰葉片，觀察是否會閉合下垂", plant: "含羞草" },
+        { id: 2, action: "👀 觀察：找找看葉子末端有沒有「捕蟲籠」", plant: "豬籠草" },
+        { id: 3, action: "👀 觀察：尋找樹枝上垂掛下來的長長「氣根」", plant: "榕樹" },
+        { id: 4, action: "✋ 觸摸：輕捏葉柄，感覺裡面是否有海綿狀的氣室", plant: "布袋蓮" },
+        { id: 5, action: "👀 觀察：水面上的葉子邊緣有沒有「V字型缺口」", plant: "睡蓮" },
+        { id: 6, action: "💧 滴水：滴水在葉片上，觀察細毛是否會讓水珠滾動", plant: "大萍" },
+        { id: 7, action: "👀 觀察：尋找莖部異常肥厚且長滿尖刺的植物", plant: "仙人掌" },
+        { id: 8, action: "👀 觀察：秋天時，樹上是否有像紅色小燈籠的果實", plant: "臺灣欒樹" },
+        { id: 9, action: "👀 觀察：尋找攀爬在欄杆上的「漏斗狀」花朵", plant: "牽牛花" },
+        { id: 10, action: "👀 觀察：花序非常巨大，且有明顯的鮮黃色花瓣", plant: "向日葵" }
     ];
 
-    let currentPlantIndex = 0;
-    let currentClueIndex = 0;
-    let score = 0;
-    let shuffledPlants = [];
-    let currentOptions = [];
+    let cardsArray = [];
+    let firstCard = null;
+    let secondCard = null;
+    let moves = 0;
+    let matches = 0;
+    let lockBoard = false;
 
     function initGame() {
-        shuffledPlants = plantsData.sort(() => 0.5 - Math.random());
-        loadQuestion();
-    }
+        const gameBoard = document.getElementById("gameBoard");
+        gameBoard.innerHTML = "";
+        moves = 0;
+        matches = 0;
+        document.getElementById("moves").innerText = moves;
+        document.getElementById("matches").innerText = matches;
+        document.getElementById("restartBtn").style.display = "none";
+        cardsArray = [];
 
-    function loadQuestion() {
-        currentClueIndex = 0;
-        document.getElementById("progressDisplay").innerText = `題目: ${currentPlantIndex + 1} / 10`;
-        document.getElementById("clueDisplay").innerHTML = "準備好猜測了嗎？";
-        document.getElementById("message").innerText = "";
-        document.getElementById("nextClueBtn").style.display = "inline-block";
-        document.getElementById("nextClueBtn").disabled = false;
-        document.getElementById("nextClueBtn").innerText = "🔍 給我第一個提示 (答對得10分)";
-        document.getElementById("optionsContainer").style.display = "none";
-        document.getElementById("nextPlantBtn").style.display = "none";
-        document.getElementById("plantImg").style.display = "none";
-        
-        generateOptions();
-    }
+        // 拆分資料成為獨立卡片
+        pairsData.forEach(pair => {
+            cardsArray.push({ id: pair.id, text: pair.action, type: 'action' });
+            cardsArray.push({ id: pair.id, text: pair.plant, type: 'plant' });
+        });
 
-    function showNextClue() {
-        const plant = shuffledPlants[currentPlantIndex];
-        if (currentClueIndex < plant.clues.length) {
-            let cluesHtml = "";
-            for (let i = 0; i <= currentClueIndex; i++) {
-                cluesHtml += `• ${plant.clues[i]}<br>`;
-            }
-            document.getElementById("clueDisplay").innerHTML = cluesHtml;
-            currentClueIndex++;
-            document.getElementById("optionsContainer").style.display = "grid";
-        }
-        
-        const btn = document.getElementById("nextClueBtn");
-        if (currentClueIndex === 1) btn.innerText = "🔍 給我第二個提示 (答對得5分)";
-        else if (currentClueIndex === 2) btn.innerText = "🔍 給我最後提示 (答對得2分)";
-        else if (currentClueIndex === 3) {
-            btn.disabled = true;
-            btn.innerText = "提示發放完畢";
-        }
-    }
+        // 隨機打亂卡片
+        cardsArray.sort(() => 0.5 - Math.random());
 
-    function generateOptions() {
-        const correctName = shuffledPlants[currentPlantIndex].name;
-        let wrongOptions = plantsData.filter(p => p.name !== correctName).sort(() => 0.5 - Math.random()).slice(0, 3).map(p => p.name);
-        currentOptions = [correctName, ...wrongOptions].sort(() => 0.5 - Math.random());
-        
-        const optionsContainer = document.getElementById("optionsContainer");
-        optionsContainer.innerHTML = "";
-        
-        currentOptions.forEach(option => {
-            const btn = document.createElement("button");
-            btn.className = "btn";
-            btn.innerText = option;
-            btn.onclick = () => checkAnswer(option, btn);
-            optionsContainer.appendChild(btn);
+        // 生成卡片 HTML
+        cardsArray.forEach((card, index) => {
+            const cardElement = document.createElement("div");
+            cardElement.classList.add("card");
+            cardElement.dataset.id = card.id;
+            cardElement.dataset.index = index;
+            cardElement.innerText = card.text;
+            cardElement.addEventListener("click", flipCard);
+            gameBoard.appendChild(cardElement);
         });
     }
 
-    function checkAnswer(selected, btnElement) {
-        const plant = shuffledPlants[currentPlantIndex];
-        const correct = plant.name;
-        const msgElement = document.getElementById("message");
+    function flipCard() {
+        if (lockBoard) return;
+        if (this === firstCard) return;
+
+        this.classList.add("flipped");
+
+        if (!firstCard) {
+            firstCard = this;
+            return;
+        }
+
+        secondCard = this;
+        lockBoard = true;
+        moves++;
+        document.getElementById("moves").innerText = moves;
+
+        checkForMatch();
+    }
+
+    function checkForMatch() {
+        const isMatch = firstCard.dataset.id === secondCard.dataset.id;
+        isMatch ? disableCards() : unflipCards();
+    }
+
+    function disableCards() {
+        firstCard.classList.add("matched");
+        secondCard.classList.add("matched");
+        firstCard.removeEventListener("click", flipCard);
+        secondCard.removeEventListener("click", flipCard);
         
-        if (selected === correct) {
-            let points = 0;
-            if (currentClueIndex === 1) points = 10;
-            else if (currentClueIndex === 2) points = 5;
-            else if (currentClueIndex === 3) points = 2;
-            
-            score += points;
-            document.getElementById("scoreDisplay").innerText = score;
-            
-            msgElement.innerHTML = `✅ 答對了！獲得 ${points} 分！就是 <b>${correct}</b>！`;
-            msgElement.className = "correct";
-            
-            document.getElementById("plantImg").src = plant.img;
-            document.getElementById("plantImg").style.display = "block";
-            let fullClues = "";
-            plant.clues.forEach(c => fullClues += `• ${c}<br>`);
-            document.getElementById("clueDisplay").innerHTML = fullClues;
-            
-            document.getElementById("nextClueBtn").style.display = "none";
-            const allBtns = document.getElementById("optionsContainer").querySelectorAll("button");
-            allBtns.forEach(b => b.disabled = true);
-            btnElement.style.backgroundColor = "#ff9800";
-            
-            document.getElementById("nextPlantBtn").style.display = "inline-block";
-        } else {
-            msgElement.innerText = "❌ 不對喔，分數扣 1 分，請繼續嘗試！";
-            msgElement.className = "wrong";
-            score = Math.max(0, score - 1);
-            document.getElementById("scoreDisplay").innerText = score;
-            btnElement.disabled = true;
+        matches++;
+        document.getElementById("matches").innerText = matches;
+        resetBoard();
+
+        if (matches === pairsData.length) {
+            setTimeout(() => {
+                alert(`🎉 恭喜過關！你總共用了 ${moves} 步完成所有植物觀察配對！`);
+                document.getElementById("restartBtn").style.display = "block";
+            }, 500);
         }
     }
 
-    function nextQuestion() {
-        currentPlantIndex++;
-        if (currentPlantIndex >= shuffledPlants.length) {
-            document.getElementById("clueDisplay").innerHTML = `🎉 遊戲結束！你的總得分是：<b>${score} 分</b>`;
-            document.getElementById("plantImg").style.display = "none";
-            document.getElementById("optionsContainer").style.display = "none";
-            document.getElementById("nextPlantBtn").style.display = "none";
-            document.getElementById("progressDisplay").style.display = "none";
-            document.getElementById("message").innerText = "";
-        } else {
-            loadQuestion();
-        }
+    function unflipCards() {
+        setTimeout(() => {
+            firstCard.classList.remove("flipped");
+            secondCard.classList.remove("flipped");
+            resetBoard();
+        }, 1200);
+    }
+
+    function resetBoard() {
+        [firstCard, secondCard, lockBoard] = [null, null, false];
     }
 
     initGame();
