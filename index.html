@@ -1,357 +1,211 @@
-加入你先前提供的植物圖片後，圖鑑區才算真正完整！這能幫助學生在進入文字配對前，先在腦海中將「真實影像」與「觀察動作」連結起來。
-
-我將你提供的圖片網址整合進了程式碼，並微調了圖鑑區的 CSS。現在圖片會自動裁切、縮放以完美塞入 5x2 的滿版網格中，**保證有圖片也依然不需要滑動螢幕**。
-
-請複製以下最新版本的完整程式碼：
-
-```html
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>植物觀察圖鑑與配對特訓</title>
+<title>植物觀察行前特訓</title>
 <style>
-    /* 嚴格鎖定視窗大小，禁止任何捲動 */
+    /* 滿版不捲動設定 */
     html, body {
-        margin: 0;
-        padding: 0;
-        width: 100vw;
-        height: 100vh;
-        overflow: hidden;
-        font-family: '微軟正黑體', sans-serif;
-        background-color: #e8f5e9;
-        display: flex;
-        justify-content: center;
-        align-items: center;
+        margin: 0; padding: 0; width: 100vw; height: 100vh; overflow: hidden;
+        font-family: '微軟正黑體', sans-serif; background-color: #f1f8e9;
+        display: flex; justify-content: center; align-items: center; color: #2e7d32;
     }
-
-    /* 主要容器 */
     .app-container {
-        width: 98vw;
-        height: 96vh;
-        max-width: 1400px;
-        display: flex;
-        flex-direction: column;
+        width: 95vw; height: 95vh; max-width: 800px;
+        background: white; border-radius: 15px; box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+        display: flex; flex-direction: column; overflow: hidden;
     }
 
-    /* 標題區塊 */
-    .header {
-        text-align: center;
-        flex-shrink: 0;
-        margin-bottom: 1vh;
-    }
-    .header h1 { margin: 0 0 0.5vh 0; font-size: clamp(20px, 3.5vh, 36px); color: #33691e; }
-    .header p { margin: 0; font-size: clamp(14px, 2vh, 20px); color: #558b2f; font-weight: bold; }
+    /* 共用螢幕設定 */
+    .screen { display: none; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 100%; padding: 20px; box-sizing: border-box; text-align: center; }
+    .active { display: flex; }
 
-    /* 底部按鈕區塊 */
-    .footer {
-        flex-shrink: 0;
-        height: 6vh;
-        min-height: 40px;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        margin-top: 1vh;
-    }
+    h1 { color: #33691e; margin-bottom: 10px; font-size: clamp(24px, 4vh, 36px); }
+    p.subtitle { color: #558b2f; font-size: clamp(16px, 2.5vh, 22px); margin-bottom: 30px; }
+
+    /* 按鈕樣式 */
     .btn {
-        background-color: #ff9800;
-        color: white;
-        border: none;
-        padding: 0 40px;
-        height: 100%;
-        font-size: clamp(16px, 2.2vh, 24px);
-        border-radius: 8px;
-        cursor: pointer;
-        font-weight: bold;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        transition: 0.2s;
+        background-color: #ff9800; color: white; border: none; padding: 15px 30px;
+        font-size: clamp(18px, 2.5vh, 24px); border-radius: 8px; cursor: pointer; font-weight: bold;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: 0.2s; margin: 10px;
     }
-    .btn:hover { background-color: #f57c00; transform: scale(1.02); }
+    .btn:hover { background-color: #f57c00; transform: scale(1.05); }
 
-    /* ================= 階段一：圖鑑區 ================= */
-    #introScreen {
-        display: flex;
-        flex-direction: column;
-        width: 100%;
-        height: 100%;
+    /* 遊戲區樣式 */
+    .progress { font-size: 1.2em; font-weight: bold; color: #7cb342; margin-bottom: 15px; flex-shrink: 0; }
+    .plant-img { width: 100%; max-height: 30vh; object-fit: contain; border-radius: 10px; margin-bottom: 20px; flex-shrink: 0; }
+    .narrative-box { background: #dcedc8; padding: 20px; border-radius: 10px; font-size: clamp(18px, 2.5vh, 24px); font-weight: bold; line-height: 1.5; margin-bottom: 20px; width: 90%; }
+    
+    .options { display: flex; gap: 15px; justify-content: center; flex-wrap: wrap; width: 100%; }
+    .sense-btn {
+        background-color: #8bc34a; color: white; border: none; padding: 15px 25px;
+        font-size: clamp(20px, 3vh, 26px); border-radius: 50px; cursor: pointer; font-weight: bold;
+        transition: 0.2s; display: flex; align-items: center; gap: 8px;
     }
-    /* 5行 x 2列，加入圖片後的空間配置 */
-    .intro-grid {
-        display: grid;
-        grid-template-columns: repeat(5, 1fr);
-        grid-template-rows: repeat(2, 1fr);
-        gap: 12px;
-        flex-grow: 1;
-        min-height: 0; /* 確保 Grid 內部可以壓縮 */
-    }
-    .intro-card {
-        background: white;
-        border: 3px solid #7cb342;
-        border-radius: 10px;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        text-align: center;
-        padding: 8px;
-        box-shadow: 0 4px 8px rgba(0,0,0,0.05);
-        overflow: hidden;
-    }
-    /* 讓圖片填滿剩餘高度，不變形 */
-    .intro-card img {
-        width: 100%;
-        flex-grow: 1;
-        min-height: 0; 
-        object-fit: cover;
-        border-radius: 6px;
-        margin-bottom: 6px;
-    }
-    .intro-card .plant-name { 
-        font-size: clamp(16px, 2.2vh, 24px); 
-        font-weight: bold; 
-        color: #1b5e20; 
-        margin-bottom: 4px; 
-        flex-shrink: 0;
-    }
-    .intro-card .plant-action { 
-        font-size: clamp(12px, 1.6vh, 18px); 
-        color: #424242; 
-        line-height: 1.3; 
-        flex-shrink: 0;
-    }
+    .sense-btn:hover { background-color: #689f38; }
+    .sense-btn:disabled { background-color: #c5e1a5; cursor: not-allowed; transform: none; }
 
-    /* ================= 階段二：遊戲區 ================= */
-    #gameScreen {
-        display: none;
-        flex-direction: column;
-        width: 100%;
-        height: 100%;
-    }
-    .status-board {
-        display: flex;
-        justify-content: center;
-        gap: 40px;
-        background: #fff;
-        padding: 1vh 0;
-        border-radius: 8px;
-        margin-bottom: 1vh;
-        font-size: clamp(16px, 2vh, 22px);
-        font-weight: bold;
-        color: #2e7d32;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        flex-shrink: 0;
-    }
-    /* 強制 5行 x 4列 */
-    .game-grid {
-        display: grid;
-        grid-template-columns: repeat(5, 1fr);
-        grid-template-rows: repeat(4, 1fr);
-        gap: 10px;
-        flex-grow: 1;
-    }
-    .card {
-        background-color: #aed581;
-        border-radius: 8px;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        text-align: center;
-        padding: 10px;
-        font-size: clamp(14px, 2vh, 22px);
-        font-weight: bold;
-        color: transparent; 
-        cursor: pointer;
-        box-sizing: border-box;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        transition: transform 0.3s, background-color 0.3s;
-        user-select: none;
-    }
-    .card.flipped {
-        background-color: #ffffff;
-        color: #1b5e20;
-        border: 3px solid #7cb342;
-        cursor: default;
-    }
-    .card.matched {
-        background-color: #c8e6c9;
-        color: #1b5e20;
-        border: 3px solid #388e3c;
-        opacity: 0.8;
-        cursor: default;
-    }
+    #feedbackBox { margin-top: 20px; min-height: 50px; font-size: 1.3em; font-weight: bold; }
+    .correct { color: #2e7d32; }
+    .wrong { color: #c62828; }
+    
+    /* 安全守則區樣式 */
+    .rules-list { text-align: left; background: #fff3e0; padding: 30px; border-radius: 10px; border-left: 8px solid #ff9800; width: 85%; }
+    .rules-list p { font-size: clamp(18px, 2.5vh, 24px); font-weight: bold; color: #e65100; margin: 15px 0; line-height: 1.5; display: flex; align-items: flex-start; gap: 10px; }
 </style>
 </head>
 <body>
 
 <div class="app-container">
-    
-    <!-- 第一階段：圖鑑學習區 -->
-    <div id="introScreen">
-        <div class="header">
-            <h1>🌱 植物觀察圖鑑與特訓班</h1>
-            <p>出發尋找植物前，先來認識這 10 種植物的「專屬觀察重點」！</p>
-        </div>
-        
-        <div class="intro-grid" id="introGridContainer">
-            <!-- 5x2 圖鑑由 JS 生成 -->
-        </div>
-        
-        <div class="footer">
-            <button class="btn" onclick="startGame()">🚀 特訓完成，進入配對挑戰！</button>
-        </div>
+
+    <!-- 畫面 1：開始畫面 -->
+    <div id="startScreen" class="screen active">
+        <h1>🌱 觀察植物，你用對方法了嗎？</h1>
+        <p class="subtitle">不同的植物特徵，需要不同的感官來幫忙。<br>準備好測試你的觀察力了嗎？</p>
+        <button class="btn" onclick="startGame()">🚀 開始特訓</button>
     </div>
 
-    <!-- 第二階段：遊戲挑戰區 -->
-    <div id="gameScreen">
-        <div class="header">
-            <h1>🌿 植物觀察配對任務</h1>
-            <p>請翻出「植物名稱」與對應的「觀察重點」</p>
+    <!-- 畫面 2：遊戲任務區 -->
+    <div id="gameScreen" class="screen">
+        <div class="progress" id="progressDisplay">任務進度: 1 / 10</div>
+        <img id="plantImg" class="plant-img" src="" alt="植物圖片">
+        
+        <div class="narrative-box" id="narrativeDisplay">敘述載入中...</div>
+        
+        <div class="options" id="optionsContainer">
+            <button class="sense-btn" onclick="checkAnswer('👀 看')">👀 用眼睛看</button>
+            <button class="sense-btn" onclick="checkAnswer('✋ 摸')">✋ 用手摸摸</button>
+            <button class="sense-btn" onclick="checkAnswer('👃 聞')">👃 用鼻子聞</button>
         </div>
+        
+        <div id="feedbackBox"></div>
+        <button class="btn" id="nextBtn" onclick="nextQuestion()" style="display: none;">➡️ 下一題</button>
+    </div>
 
-        <div class="status-board">
-            <span>翻牌步數: <span id="moves">0</span></span>
-            <span>配對成功: <span id="matches">0</span> / 10</span>
+    <!-- 畫面 3：安全守則區 -->
+    <div id="endScreen" class="screen">
+        <h1>⚠️ 出發前的最後叮嚀！</h1>
+        <p class="subtitle">恭喜完成特訓！在去校園尋找植物前，請大聲唸出這四個安全守則：</p>
+        
+        <div class="rules-list">
+            <p><span>🧼</span> <span><b>勤洗手：</b>觀察結束後，一定要用肥皂把手洗乾淨。</span></p>
+            <p><span>🚫</span> <span><b>絕對不吃：</b>不可以把任何來路不明的葉子或果實放進嘴巴裡！</span></p>
+            <p><span>💨</span> <span><b>用搧的聞：</b>想聞植物氣味時，不要把鼻子貼上去，要用手輕輕將氣味「搧」過來。</span></p>
+            <p><span>⚠️</span> <span><b>注意安全：</b>在校園觀察時，注意腳下濕滑，並小心周遭的蚊蟲與尖刺植物。</span></p>
         </div>
-
-        <!-- 5x4 遊戲棋盤 -->
-        <div class="game-grid" id="gameBoard"></div>
-
-        <div class="footer">
-            <button class="btn" id="restartBtn" onclick="backToIntro()" style="display: none; background-color: #7cb342;">🔄 回到圖鑑複習</button>
-        </div>
+        
+        <button class="btn" onclick="location.reload()" style="margin-top: 30px;">🔄 再複習一次</button>
     </div>
 
 </div>
 
 <script>
-    // 整合了你提供的植物圖片
-    const pairsData = [
-        { id: 1, action: "✋ 輕碰葉片\n觀察是否閉合", plant: "含羞草", img: "https://st.perplexity.ai/estatic/0b226c450798410ac541646c86ec31afd840e5beab817a5d84fa821e7db61981ec84c3b4a3f072a7a2e1899c9fb06c6ef7b192ddc2f6621970bdbfed44614918a0ec5516ae9e079aae8a22ebc15b0c636f7a40c2513e486f4ccecfb99539d5090491ab525bf73729ab02faf195a4efc6" },
-        { id: 2, action: "👀 找找葉子末端\n有沒有捕蟲籠", plant: "豬籠草", img: "https://d2u1z1lopyfwlx.cloudfront.net/thumbnails/159727e6-06b2-5719-80d4-85adf0ea4548/b8082786-a487-52ff-ba65-f8daadc3cfef.jpg" },
-        { id: 3, action: "👀 尋找樹枝上\n垂掛的長長氣根", plant: "榕樹", img: "https://upload.wikimedia.org/wikipedia/commons/8/82/Ficus_microcarpa_leaves_and_fruits.jpg" },
-        { id: 4, action: "✋ 輕捏葉柄\n感覺海綿狀氣室", plant: "布袋蓮", img: "https://d2u1z1lopyfwlx.cloudfront.net/thumbnails/28b320c6-aea8-58bd-916d-4d41e16f77f5/51e7eb76-e93f-5be1-ac0e-d17677e320ff.jpg" },
-        { id: 5, action: "👀 看葉子邊緣\n是否有 V字型缺口", plant: "睡蓮", img: "https://upload.wikimedia.org/wikipedia/commons/4/4f/Nymphaea_alba_1.jpg" },
-        { id: 6, action: "💧 滴水在葉片\n看細毛讓水珠滾動", plant: "大萍", img: "https://d2u1z1lopyfwlx.cloudfront.net/thumbnails/ac6729ea-37fd-5ad9-9500-1fdaeb70f538/0af98422-8d5d-5204-9f00-361f34eddb23.jpg" },
-        { id: 7, action: "👀 尋找莖部肥厚\n且長滿尖刺的植物", plant: "仙人掌", img: "https://upload.wikimedia.org/wikipedia/commons/7/7b/Opuntia_ficus-indica_1.jpg" },
-        { id: 8, action: "👀 秋天樹上是否有\n紅色小燈籠果實", plant: "臺灣欒樹", img: "https://upload.wikimedia.org/wikipedia/commons/8/84/Koelreuteria_elegans_subsp._formosana_01.jpg" },
-        { id: 9, action: "👀 尋找攀爬在欄杆\n的漏斗狀花朵", plant: "牽牛花", img: "https://upload.wikimedia.org/wikipedia/commons/8/85/Ipomoea_purpurea_flowers.jpg" },
-        { id: 10, action: "👀 花序巨大且有\n鮮黃色花瓣", plant: "向日葵", img: "https://d2u1z1lopyfwlx.cloudfront.net/thumbnails/87710310-4057-575b-ab48-124da79c4884/2fdf7415-58ca-5674-a205-fcefffcee2a0.jpg" }
+    const quizData = [
+        { 
+            plant: "含羞草", img: "https://st.perplexity.ai/estatic/0b226c450798410ac541646c86ec31afd840e5beab817a5d84fa821e7db61981ec84c3b4a3f072a7a2e1899c9fb06c6ef7b192ddc2f6621970bdbfed44614918a0ec5516ae9e079aae8a22ebc15b0c636f7a40c2513e486f4ccecfb99539d5090491ab525bf73729ab02faf195a4efc6",
+            narrative: "你找到了一株含羞草，你想知道它的葉子碰到後會不會馬上閉合起來，你該用什麼感官？", 
+            answer: "✋ 摸", feedback: "✅ 答對了！輕輕碰一下葉片，觀察它有趣的閉合反應吧！"
+        },
+        { 
+            plant: "豬籠草", img: "https://d2u1z1lopyfwlx.cloudfront.net/thumbnails/159727e6-06b2-5719-80d4-85adf0ea4548/b8082786-a487-52ff-ba65-f8daadc3cfef.jpg",
+            narrative: "這是一株豬籠草，你想找出它用來抓昆蟲的「捕蟲籠」長在葉子的哪個部位，你該用什麼感官？", 
+            answer: "👀 看", feedback: "✅ 答對了！用眼睛仔細觀察葉子的末端，就能找到瓶狀的捕蟲籠喔！"
+        },
+        { 
+            plant: "牽牛花", img: "https://upload.wikimedia.org/wikipedia/commons/8/85/Ipomoea_purpurea_flowers.jpg",
+            narrative: "這朵攀爬在欄杆上的牽牛花長得像小喇叭，你想知道它會不會散發出花香，你該用什麼感官？", 
+            answer: "👃 聞", feedback: "✅ 答對了！記得要用手輕輕「搧」聞，不要把鼻子直接貼在花朵上喔！"
+        },
+        { 
+            plant: "布袋蓮", img: "https://d2u1z1lopyfwlx.cloudfront.net/thumbnails/28b320c6-aea8-58bd-916d-4d41e16f77f5/51e7eb76-e93f-5be1-ac0e-d17677e320ff.jpg",
+            narrative: "你想確認布袋蓮膨大的葉柄裡面，是不是真的像海綿一樣軟軟的、充滿氣室，你該用什麼感官？", 
+            answer: "✋ 摸", feedback: "✅ 答對了！用手指輕輕捏捏看葉柄，感受它充滿空氣的彈性。"
+        },
+        { 
+            plant: "仙人掌", img: "https://upload.wikimedia.org/wikipedia/commons/7/7b/Opuntia_ficus-indica_1.jpg",
+            narrative: "這是一盆生長在沙漠的仙人掌，你想知道它的葉子退化成了什麼形狀，你該用什麼感官？", 
+            answer: "👀 看", feedback: "✅ 答對了！用眼睛看就好，千萬別用手摸，以免被尖刺刺傷喔！"
+        },
+        { 
+            plant: "榕樹", img: "https://upload.wikimedia.org/wikipedia/commons/8/82/Ficus_microcarpa_leaves_and_fruits.jpg",
+            narrative: "校園裡的榕樹垂下了許多長長的「氣根」，你想知道這些氣根摸起來是粗糙還是平滑的，你該用什麼感官？", 
+            answer: "✋ 摸", feedback: "✅ 答對了！輕輕摸摸看垂下來的氣根，感受它的觸感。"
+        },
+        { 
+            plant: "臺灣欒樹", img: "https://upload.wikimedia.org/wikipedia/commons/8/84/Koelreuteria_elegans_subsp._formosana_01.jpg",
+            narrative: "秋天到了，臺灣欒樹結出了像紅色小燈籠一樣的果實，你想知道這個果實有沒有特殊的味道，你該用什麼感官？", 
+            answer: "👃 聞", feedback: "✅ 答對了！可以撿起掉在地上的果實，用手搧一搧聞聞看有沒有味道。"
+        },
+        { 
+            plant: "睡蓮", img: "https://upload.wikimedia.org/wikipedia/commons/4/4f/Nymphaea_alba_1.jpg",
+            narrative: "你想在生態池尋找睡蓮，想確認這片浮在水面上的葉子邊緣有沒有「V字型的缺口」，你該用什麼感官？", 
+            answer: "👀 看", feedback: "✅ 答對了！用眼睛仔細對比葉片的形狀特徵。"
+        },
+        { 
+            plant: "大萍", img: "https://d2u1z1lopyfwlx.cloudfront.net/thumbnails/ac6729ea-37fd-5ad9-9500-1fdaeb70f538/0af98422-8d5d-5204-9f00-361f34eddb23.jpg",
+            narrative: "大萍的葉子表面佈滿了防水的細絨毛，你想感受一下這些細絨毛摸起來是什麼感覺，你該用什麼感官？", 
+            answer: "✋ 摸", feedback: "✅ 答對了！輕輕摸一下大萍的葉面，體會它奇妙的防水構造。"
+        },
+        { 
+            plant: "向日葵", img: "https://d2u1z1lopyfwlx.cloudfront.net/thumbnails/87710310-4057-575b-ab48-124da79c4884/2fdf7415-58ca-5674-a205-fcefffcee2a0.jpg",
+            narrative: "你想看清楚這朵巨大向日葵中心，那一顆顆種子（瓜子）排列的幾何圖形，你該用什麼感官？", 
+            answer: "👀 看", feedback: "✅ 答對了！用眼睛近距離觀察大自然神奇的幾何排列！"
+        }
     ];
 
-    let firstCard = null, secondCard = null;
-    let moves = 0, matches = 0;
-    let lockBoard = false;
+    let currentQuestion = 0;
+    let shuffledQuiz = [];
 
-    // 1. 初始化圖鑑區 (加入圖片)
-    function renderIntro() {
-        const container = document.getElementById("introGridContainer");
-        container.innerHTML = "";
-        pairsData.forEach(pair => {
-            let formattedAction = pair.action.replace('\n', '<br>');
-            container.innerHTML += `
-                <div class="intro-card">
-                    <img src="${pair.img}" alt="${pair.plant}">
-                    <div class="plant-name">🌿 ${pair.plant}</div>
-                    <div class="plant-action">${formattedAction}</div>
-                </div>
-            `;
-        });
-    }
-
-    // 2. 切換畫面
     function startGame() {
-        document.getElementById("introScreen").style.display = "none";
-        document.getElementById("gameScreen").style.display = "flex";
-        initGame();
-    }
-    function backToIntro() {
-        document.getElementById("gameScreen").style.display = "none";
-        document.getElementById("introScreen").style.display = "flex";
-        document.getElementById("restartBtn").style.display = "none";
+        // 隨機打亂題目順序
+        shuffledQuiz = quizData.sort(() => 0.5 - Math.random());
+        currentQuestion = 0;
+        document.getElementById("startScreen").classList.remove("active");
+        document.getElementById("gameScreen").classList.add("active");
+        loadQuestion();
     }
 
-    // 3. 遊戲初始化邏輯
-    function initGame() {
-        const gameBoard = document.getElementById("gameBoard");
-        gameBoard.innerHTML = "";
-        moves = 0; matches = 0;
-        document.getElementById("moves").innerText = moves;
-        document.getElementById("matches").innerText = matches;
-        document.getElementById("restartBtn").style.display = "none";
-
-        let cardsArray = [];
-        pairsData.forEach(pair => {
-            let formattedAction = pair.action.replace('\n', '<br>');
-            cardsArray.push({ id: pair.id, text: formattedAction });
-            cardsArray.push({ id: pair.id, text: pair.plant });
-        });
-
-        // 隨機洗牌
-        cardsArray.sort(() => 0.5 - Math.random());
-
-        // 生成卡片
-        cardsArray.forEach(card => {
-            const cardElement = document.createElement("div");
-            cardElement.classList.add("card");
-            cardElement.dataset.id = card.id;
-            cardElement.innerHTML = card.text; 
-            cardElement.addEventListener("click", flipCard);
-            gameBoard.appendChild(cardElement);
-        });
-    }
-
-    // 4. 翻牌邏輯
-    function flipCard() {
-        if (lockBoard || this === firstCard || this.classList.contains("matched")) return;
-
-        this.classList.add("flipped");
-
-        if (!firstCard) {
-            firstCard = this;
-            return;
-        }
-
-        secondCard = this;
-        lockBoard = true;
-        moves++;
-        document.getElementById("moves").innerText = moves;
-
-        const isMatch = firstCard.dataset.id === secondCard.dataset.id;
-        isMatch ? disableCards() : unflipCards();
-    }
-
-    function disableCards() {
-        firstCard.classList.add("matched");
-        secondCard.classList.add("matched");
+    function loadQuestion() {
+        const data = shuffledQuiz[currentQuestion];
+        document.getElementById("progressDisplay").innerText = `任務進度: ${currentQuestion + 1} / 10`;
+        document.getElementById("plantImg").src = data.img;
+        document.getElementById("narrativeDisplay").innerText = data.narrative;
         
-        matches++;
-        document.getElementById("matches").innerText = matches;
-        resetBoard();
+        document.getElementById("feedbackBox").innerText = "";
+        document.getElementById("nextBtn").style.display = "none";
+        
+        // 恢復所有按鈕狀態
+        const btns = document.querySelectorAll(".sense-btn");
+        btns.forEach(btn => btn.disabled = false);
+    }
 
-        if (matches === pairsData.length) {
-            setTimeout(() => {
-                alert(`🎉 太厲害了！你用了 ${moves} 步完成所有特訓，現在帶著學習單出發去校園找植物吧！`);
-                document.getElementById("restartBtn").style.display = "block";
-            }, 500);
+    function checkAnswer(selectedSense) {
+        const data = shuffledQuiz[currentQuestion];
+        const feedbackBox = document.getElementById("feedbackBox");
+        const btns = document.querySelectorAll(".sense-btn");
+        
+        if (selectedSense === data.answer) {
+            feedbackBox.innerHTML = data.feedback;
+            feedbackBox.className = "correct";
+            document.getElementById("nextBtn").style.display = "block";
+            btns.forEach(btn => btn.disabled = true); // 答對後鎖定按鈕
+        } else {
+            feedbackBox.innerHTML = `❌ 不太對喔！再想一下，這個動作該用什麼感官？`;
+            feedbackBox.className = "wrong";
         }
     }
 
-    function unflipCards() {
-        setTimeout(() => {
-            firstCard.classList.remove("flipped");
-            secondCard.classList.remove("flipped");
-            resetBoard();
-        }, 1200);
+    function nextQuestion() {
+        currentQuestion++;
+        if (currentQuestion >= shuffledQuiz.length) {
+            // 切換至安全守則畫面
+            document.getElementById("gameScreen").classList.remove("active");
+            document.getElementById("endScreen").classList.add("active");
+        } else {
+            loadQuestion();
+        }
     }
-
-    function resetBoard() {
-        [firstCard, secondCard, lockBoard] = [null, null, false];
-    }
-
-    // 網頁載入時執行
-    renderIntro();
 </script>
 </body>
 </html>
-
-```
