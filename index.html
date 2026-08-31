@@ -1,121 +1,269 @@
+加入你先前提供的植物圖片後，圖鑑區才算真正完整！這能幫助學生在進入文字配對前，先在腦海中將「真實影像」與「觀察動作」連結起來。
+
+我將你提供的圖片網址整合進了程式碼，並微調了圖鑑區的 CSS。現在圖片會自動裁切、縮放以完美塞入 5x2 的滿版網格中，**保證有圖片也依然不需要滑動螢幕**。
+
+請複製以下最新版本的完整程式碼：
+
+```html
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>植物觀察特訓與配對</title>
+<title>植物觀察圖鑑與配對特訓</title>
 <style>
-    body { font-family: '微軟正黑體', sans-serif; background-color: #e8f5e9; color: #2e7d32; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; box-sizing: border-box; overflow-x: hidden; }
-    h1 { color: #33691e; margin-top: 0; margin-bottom: 5px; font-size: 2em; text-align: center; }
-    p.subtitle { color: #558b2f; margin-top: 0; margin-bottom: 15px; font-weight: bold; text-align: center; }
-    
-    /* 容器設定：確保切換時版面置中 */
-    .screen { display: flex; flex-direction: column; align-items: center; width: 100%; max-width: 1000px; }
-    #gameScreen { display: none; } /* 初始隱藏遊戲區 */
+    /* 嚴格鎖定視窗大小，禁止任何捲動 */
+    html, body {
+        margin: 0;
+        padding: 0;
+        width: 100vw;
+        height: 100vh;
+        overflow: hidden;
+        font-family: '微軟正黑體', sans-serif;
+        background-color: #e8f5e9;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
 
-    /* 圖鑑區樣式 */
-    .intro-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; width: 100%; margin-bottom: 25px; }
-    .intro-card { background: white; padding: 12px 15px; border-left: 6px solid #7cb342; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-    .intro-card .plant-name { font-size: 1.2em; font-weight: bold; color: #1b5e20; margin-bottom: 5px; }
-    .intro-card .plant-action { font-size: 1em; color: #424242; }
+    /* 主要容器 */
+    .app-container {
+        width: 98vw;
+        height: 96vh;
+        max-width: 1400px;
+        display: flex;
+        flex-direction: column;
+    }
 
-    /* 遊戲區樣式 */
-    .status-board { display: flex; gap: 30px; font-size: 1.2em; font-weight: bold; background: #fff; padding: 8px 20px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 15px; }
-    
-    /* 5x4 版面配置，縮減間距與卡片高度避免滑動 */
-    .game-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; width: 100%; max-width: 1000px; }
-    
-    .card { background-color: #aed581; height: 11vh; min-height: 80px; max-height: 110px; border-radius: 8px; display: flex; justify-content: center; align-items: center; text-align: center; padding: 8px; font-size: 0.95em; font-weight: bold; color: transparent; cursor: pointer; transition: transform 0.3s, background-color 0.3s; box-shadow: 0 3px 6px rgba(0,0,0,0.1); user-select: none; line-height: 1.3; }
-    .card.flipped { background-color: #ffffff; color: #1b5e20; transform: rotateY(0deg); cursor: default; border: 2px solid #7cb342; }
-    .card.matched { background-color: #c8e6c9; color: #1b5e20; border: 2px solid #388e3c; opacity: 0.7; cursor: default; }
-    
-    /* 按鈕樣式 */
-    .btn { background-color: #ff9800; color: white; border: none; padding: 12px 28px; font-size: 1.2em; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.2s; }
-    .btn:hover { background-color: #f57c00; transform: scale(1.05); }
-    .btn-secondary { background-color: #7cb342; margin-top: 15px; display: none; }
-    .btn-secondary:hover { background-color: #689f38; }
+    /* 標題區塊 */
+    .header {
+        text-align: center;
+        flex-shrink: 0;
+        margin-bottom: 1vh;
+    }
+    .header h1 { margin: 0 0 0.5vh 0; font-size: clamp(20px, 3.5vh, 36px); color: #33691e; }
+    .header p { margin: 0; font-size: clamp(14px, 2vh, 20px); color: #558b2f; font-weight: bold; }
 
-    /* 響應式：若螢幕真的太小（如直立手機），退回 4 欄或 2 欄 */
-    @media (max-width: 800px) {
-        .game-grid { grid-template-columns: repeat(4, 1fr); }
-        .intro-grid { grid-template-columns: 1fr; }
-        .card { height: 80px; font-size: 0.85em; }
+    /* 底部按鈕區塊 */
+    .footer {
+        flex-shrink: 0;
+        height: 6vh;
+        min-height: 40px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-top: 1vh;
+    }
+    .btn {
+        background-color: #ff9800;
+        color: white;
+        border: none;
+        padding: 0 40px;
+        height: 100%;
+        font-size: clamp(16px, 2.2vh, 24px);
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: bold;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        transition: 0.2s;
+    }
+    .btn:hover { background-color: #f57c00; transform: scale(1.02); }
+
+    /* ================= 階段一：圖鑑區 ================= */
+    #introScreen {
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+        height: 100%;
+    }
+    /* 5行 x 2列，加入圖片後的空間配置 */
+    .intro-grid {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        grid-template-rows: repeat(2, 1fr);
+        gap: 12px;
+        flex-grow: 1;
+        min-height: 0; /* 確保 Grid 內部可以壓縮 */
+    }
+    .intro-card {
+        background: white;
+        border: 3px solid #7cb342;
+        border-radius: 10px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        padding: 8px;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+        overflow: hidden;
+    }
+    /* 讓圖片填滿剩餘高度，不變形 */
+    .intro-card img {
+        width: 100%;
+        flex-grow: 1;
+        min-height: 0; 
+        object-fit: cover;
+        border-radius: 6px;
+        margin-bottom: 6px;
+    }
+    .intro-card .plant-name { 
+        font-size: clamp(16px, 2.2vh, 24px); 
+        font-weight: bold; 
+        color: #1b5e20; 
+        margin-bottom: 4px; 
+        flex-shrink: 0;
+    }
+    .intro-card .plant-action { 
+        font-size: clamp(12px, 1.6vh, 18px); 
+        color: #424242; 
+        line-height: 1.3; 
+        flex-shrink: 0;
+    }
+
+    /* ================= 階段二：遊戲區 ================= */
+    #gameScreen {
+        display: none;
+        flex-direction: column;
+        width: 100%;
+        height: 100%;
+    }
+    .status-board {
+        display: flex;
+        justify-content: center;
+        gap: 40px;
+        background: #fff;
+        padding: 1vh 0;
+        border-radius: 8px;
+        margin-bottom: 1vh;
+        font-size: clamp(16px, 2vh, 22px);
+        font-weight: bold;
+        color: #2e7d32;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        flex-shrink: 0;
+    }
+    /* 強制 5行 x 4列 */
+    .game-grid {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        grid-template-rows: repeat(4, 1fr);
+        gap: 10px;
+        flex-grow: 1;
+    }
+    .card {
+        background-color: #aed581;
+        border-radius: 8px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+        padding: 10px;
+        font-size: clamp(14px, 2vh, 22px);
+        font-weight: bold;
+        color: transparent; 
+        cursor: pointer;
+        box-sizing: border-box;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        transition: transform 0.3s, background-color 0.3s;
+        user-select: none;
+    }
+    .card.flipped {
+        background-color: #ffffff;
+        color: #1b5e20;
+        border: 3px solid #7cb342;
+        cursor: default;
+    }
+    .card.matched {
+        background-color: #c8e6c9;
+        color: #1b5e20;
+        border: 3px solid #388e3c;
+        opacity: 0.8;
+        cursor: default;
     }
 </style>
 </head>
 <body>
 
-<!-- 第一階段：圖鑑學習區 -->
-<div id="introScreen" class="screen">
-    <h1>🌱 植物觀察特訓班</h1>
-    <p class="subtitle">出發尋找植物前，先來認識這 10 種植物的「專屬觀察重點」！</p>
+<div class="app-container">
     
-    <div class="intro-grid" id="introGridContainer">
-        <!-- 圖鑑卡片將由 JS 自動生成 -->
-    </div>
-    
-    <button class="btn" onclick="startGame()">🚀 特訓完成，進入配對挑戰！</button>
-</div>
-
-<!-- 第二階段：遊戲挑戰區 -->
-<div id="gameScreen" class="screen">
-    <h1>🌿 植物觀察配對任務</h1>
-    <p class="subtitle">請翻出「植物名稱」與對應的「觀察重點」</p>
-
-    <div class="status-board">
-        <span>翻牌步數: <span id="moves">0</span></span>
-        <span>配對成功: <span id="matches">0</span> / 10</span>
+    <!-- 第一階段：圖鑑學習區 -->
+    <div id="introScreen">
+        <div class="header">
+            <h1>🌱 植物觀察圖鑑與特訓班</h1>
+            <p>出發尋找植物前，先來認識這 10 種植物的「專屬觀察重點」！</p>
+        </div>
+        
+        <div class="intro-grid" id="introGridContainer">
+            <!-- 5x2 圖鑑由 JS 生成 -->
+        </div>
+        
+        <div class="footer">
+            <button class="btn" onclick="startGame()">🚀 特訓完成，進入配對挑戰！</button>
+        </div>
     </div>
 
-    <!-- 5x4 的遊戲棋盤 -->
-    <div class="game-grid" id="gameBoard"></div>
+    <!-- 第二階段：遊戲挑戰區 -->
+    <div id="gameScreen">
+        <div class="header">
+            <h1>🌿 植物觀察配對任務</h1>
+            <p>請翻出「植物名稱」與對應的「觀察重點」</p>
+        </div>
 
-    <button class="btn btn-secondary" id="restartBtn" onclick="backToIntro()">🔄 再次複習與挑戰</button>
+        <div class="status-board">
+            <span>翻牌步數: <span id="moves">0</span></span>
+            <span>配對成功: <span id="matches">0</span> / 10</span>
+        </div>
+
+        <!-- 5x4 遊戲棋盤 -->
+        <div class="game-grid" id="gameBoard"></div>
+
+        <div class="footer">
+            <button class="btn" id="restartBtn" onclick="backToIntro()" style="display: none; background-color: #7cb342;">🔄 回到圖鑑複習</button>
+        </div>
+    </div>
+
 </div>
 
 <script>
+    // 整合了你提供的植物圖片
     const pairsData = [
-        { id: 1, action: "✋ 觸摸：輕碰葉片，觀察是否會閉合下垂", plant: "含羞草" },
-        { id: 2, action: "👀 觀察：找找看葉子末端有沒有「捕蟲籠」", plant: "豬籠草" },
-        { id: 3, action: "👀 觀察：尋找樹枝上垂掛下來的長長「氣根」", plant: "榕樹" },
-        { id: 4, action: "✋ 觸摸：輕捏葉柄，感覺裡面是否有海綿狀的氣室", plant: "布袋蓮" },
-        { id: 5, action: "👀 觀察：水面上的葉子邊緣有沒有「V字型缺口」", plant: "睡蓮" },
-        { id: 6, action: "💧 滴水：滴水在葉片上，觀察細毛是否會讓水珠滾動", plant: "大萍" },
-        { id: 7, action: "👀 觀察：尋找莖部異常肥厚且長滿尖刺的植物", plant: "仙人掌" },
-        { id: 8, action: "👀 觀察：秋天時，樹上是否有像紅色小燈籠的果實", plant: "臺灣欒樹" },
-        { id: 9, action: "👀 觀察：尋找攀爬在欄杆上的「漏斗狀」花朵", plant: "牽牛花" },
-        { id: 10, action: "👀 觀察：花序非常巨大，且有明顯的鮮黃色花瓣", plant: "向日葵" }
+        { id: 1, action: "✋ 輕碰葉片\n觀察是否閉合", plant: "含羞草", img: "https://st.perplexity.ai/estatic/0b226c450798410ac541646c86ec31afd840e5beab817a5d84fa821e7db61981ec84c3b4a3f072a7a2e1899c9fb06c6ef7b192ddc2f6621970bdbfed44614918a0ec5516ae9e079aae8a22ebc15b0c636f7a40c2513e486f4ccecfb99539d5090491ab525bf73729ab02faf195a4efc6" },
+        { id: 2, action: "👀 找找葉子末端\n有沒有捕蟲籠", plant: "豬籠草", img: "https://d2u1z1lopyfwlx.cloudfront.net/thumbnails/159727e6-06b2-5719-80d4-85adf0ea4548/b8082786-a487-52ff-ba65-f8daadc3cfef.jpg" },
+        { id: 3, action: "👀 尋找樹枝上\n垂掛的長長氣根", plant: "榕樹", img: "https://upload.wikimedia.org/wikipedia/commons/8/82/Ficus_microcarpa_leaves_and_fruits.jpg" },
+        { id: 4, action: "✋ 輕捏葉柄\n感覺海綿狀氣室", plant: "布袋蓮", img: "https://d2u1z1lopyfwlx.cloudfront.net/thumbnails/28b320c6-aea8-58bd-916d-4d41e16f77f5/51e7eb76-e93f-5be1-ac0e-d17677e320ff.jpg" },
+        { id: 5, action: "👀 看葉子邊緣\n是否有 V字型缺口", plant: "睡蓮", img: "https://upload.wikimedia.org/wikipedia/commons/4/4f/Nymphaea_alba_1.jpg" },
+        { id: 6, action: "💧 滴水在葉片\n看細毛讓水珠滾動", plant: "大萍", img: "https://d2u1z1lopyfwlx.cloudfront.net/thumbnails/ac6729ea-37fd-5ad9-9500-1fdaeb70f538/0af98422-8d5d-5204-9f00-361f34eddb23.jpg" },
+        { id: 7, action: "👀 尋找莖部肥厚\n且長滿尖刺的植物", plant: "仙人掌", img: "https://upload.wikimedia.org/wikipedia/commons/7/7b/Opuntia_ficus-indica_1.jpg" },
+        { id: 8, action: "👀 秋天樹上是否有\n紅色小燈籠果實", plant: "臺灣欒樹", img: "https://upload.wikimedia.org/wikipedia/commons/8/84/Koelreuteria_elegans_subsp._formosana_01.jpg" },
+        { id: 9, action: "👀 尋找攀爬在欄杆\n的漏斗狀花朵", plant: "牽牛花", img: "https://upload.wikimedia.org/wikipedia/commons/8/85/Ipomoea_purpurea_flowers.jpg" },
+        { id: 10, action: "👀 花序巨大且有\n鮮黃色花瓣", plant: "向日葵", img: "https://d2u1z1lopyfwlx.cloudfront.net/thumbnails/87710310-4057-575b-ab48-124da79c4884/2fdf7415-58ca-5674-a205-fcefffcee2a0.jpg" }
     ];
 
-    let cardsArray = [];
-    let firstCard = null;
-    let secondCard = null;
-    let moves = 0;
-    let matches = 0;
+    let firstCard = null, secondCard = null;
+    let moves = 0, matches = 0;
     let lockBoard = false;
 
-    // 1. 初始化圖鑑區
+    // 1. 初始化圖鑑區 (加入圖片)
     function renderIntro() {
         const container = document.getElementById("introGridContainer");
         container.innerHTML = "";
         pairsData.forEach(pair => {
+            let formattedAction = pair.action.replace('\n', '<br>');
             container.innerHTML += `
                 <div class="intro-card">
+                    <img src="${pair.img}" alt="${pair.plant}">
                     <div class="plant-name">🌿 ${pair.plant}</div>
-                    <div class="plant-action">${pair.action}</div>
+                    <div class="plant-action">${formattedAction}</div>
                 </div>
             `;
         });
     }
 
-    // 2. 切換畫面並開始遊戲
+    // 2. 切換畫面
     function startGame() {
         document.getElementById("introScreen").style.display = "none";
         document.getElementById("gameScreen").style.display = "flex";
         initGame();
     }
-
-    // 回到圖鑑區
     function backToIntro() {
         document.getElementById("gameScreen").style.display = "none";
         document.getElementById("introScreen").style.display = "flex";
@@ -126,37 +274,35 @@
     function initGame() {
         const gameBoard = document.getElementById("gameBoard");
         gameBoard.innerHTML = "";
-        moves = 0;
-        matches = 0;
+        moves = 0; matches = 0;
         document.getElementById("moves").innerText = moves;
         document.getElementById("matches").innerText = matches;
         document.getElementById("restartBtn").style.display = "none";
-        cardsArray = [];
 
-        // 拆分資料成為 20 張獨立卡片
+        let cardsArray = [];
         pairsData.forEach(pair => {
-            cardsArray.push({ id: pair.id, text: pair.action, type: 'action' });
-            cardsArray.push({ id: pair.id, text: pair.plant, type: 'plant' });
+            let formattedAction = pair.action.replace('\n', '<br>');
+            cardsArray.push({ id: pair.id, text: formattedAction });
+            cardsArray.push({ id: pair.id, text: pair.plant });
         });
 
         // 隨機洗牌
         cardsArray.sort(() => 0.5 - Math.random());
 
-        // 生成卡片 HTML
-        cardsArray.forEach((card, index) => {
+        // 生成卡片
+        cardsArray.forEach(card => {
             const cardElement = document.createElement("div");
             cardElement.classList.add("card");
             cardElement.dataset.id = card.id;
-            cardElement.dataset.index = index;
-            cardElement.innerText = card.text;
+            cardElement.innerHTML = card.text; 
             cardElement.addEventListener("click", flipCard);
             gameBoard.appendChild(cardElement);
         });
     }
 
+    // 4. 翻牌邏輯
     function flipCard() {
-        if (lockBoard) return;
-        if (this === firstCard) return;
+        if (lockBoard || this === firstCard || this.classList.contains("matched")) return;
 
         this.classList.add("flipped");
 
@@ -170,10 +316,6 @@
         moves++;
         document.getElementById("moves").innerText = moves;
 
-        checkForMatch();
-    }
-
-    function checkForMatch() {
         const isMatch = firstCard.dataset.id === secondCard.dataset.id;
         isMatch ? disableCards() : unflipCards();
     }
@@ -181,14 +323,11 @@
     function disableCards() {
         firstCard.classList.add("matched");
         secondCard.classList.add("matched");
-        firstCard.removeEventListener("click", flipCard);
-        secondCard.removeEventListener("click", flipCard);
         
         matches++;
         document.getElementById("matches").innerText = matches;
         resetBoard();
 
-        // 完成所有配對
         if (matches === pairsData.length) {
             setTimeout(() => {
                 alert(`🎉 太厲害了！你用了 ${moves} 步完成所有特訓，現在帶著學習單出發去校園找植物吧！`);
@@ -209,8 +348,10 @@
         [firstCard, secondCard, lockBoard] = [null, null, false];
     }
 
-    // 網頁載入時先渲染圖鑑
+    // 網頁載入時執行
     renderIntro();
 </script>
 </body>
 </html>
+
+```
