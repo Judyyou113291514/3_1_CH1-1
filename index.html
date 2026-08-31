@@ -3,37 +3,75 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>植物觀察配對遊戲</title>
+<title>植物觀察特訓與配對</title>
 <style>
-    body { font-family: '微軟正黑體', sans-serif; background-color: #e8f5e9; color: #2e7d32; display: flex; flex-direction: column; align-items: center; padding: 20px; margin: 0; min-height: 100vh; }
-    h1 { color: #33691e; margin-bottom: 5px; }
-    p.subtitle { color: #558b2f; margin-top: 0; margin-bottom: 20px; font-weight: bold; }
-    .status-board { display: flex; gap: 20px; font-size: 1.2em; font-weight: bold; background: #fff; padding: 10px 20px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 20px; }
+    body { font-family: '微軟正黑體', sans-serif; background-color: #e8f5e9; color: #2e7d32; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; box-sizing: border-box; overflow-x: hidden; }
+    h1 { color: #33691e; margin-top: 0; margin-bottom: 5px; font-size: 2em; text-align: center; }
+    p.subtitle { color: #558b2f; margin-top: 0; margin-bottom: 15px; font-weight: bold; text-align: center; }
     
-    .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; max-width: 800px; width: 100%; }
-    @media (max-width: 600px) { .grid { grid-template-columns: repeat(2, 1fr); } }
+    /* 容器設定：確保切換時版面置中 */
+    .screen { display: flex; flex-direction: column; align-items: center; width: 100%; max-width: 1000px; }
+    #gameScreen { display: none; } /* 初始隱藏遊戲區 */
 
-    .card { background-color: #aed581; height: 120px; border-radius: 10px; display: flex; justify-content: center; align-items: center; text-align: center; padding: 15px; font-size: 1.1em; font-weight: bold; color: transparent; cursor: pointer; transition: transform 0.3s, background-color 0.3s; box-shadow: 0 4px 8px rgba(0,0,0,0.1); user-select: none; }
-    .card.flipped { background-color: #ffffff; color: #1b5e20; transform: rotateY(0deg); cursor: default; border: 3px solid #7cb342; }
-    .card.matched { background-color: #c8e6c9; color: #1b5e20; border: 3px solid #388e3c; opacity: 0.8; cursor: default; }
+    /* 圖鑑區樣式 */
+    .intro-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; width: 100%; margin-bottom: 25px; }
+    .intro-card { background: white; padding: 12px 15px; border-left: 6px solid #7cb342; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+    .intro-card .plant-name { font-size: 1.2em; font-weight: bold; color: #1b5e20; margin-bottom: 5px; }
+    .intro-card .plant-action { font-size: 1em; color: #424242; }
+
+    /* 遊戲區樣式 */
+    .status-board { display: flex; gap: 30px; font-size: 1.2em; font-weight: bold; background: #fff; padding: 8px 20px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 15px; }
     
-    .btn { background-color: #ff9800; color: white; border: none; padding: 12px 24px; font-size: 1.1em; border-radius: 8px; cursor: pointer; font-weight: bold; margin-top: 30px; display: none; }
-    .btn:hover { background-color: #f57c00; }
+    /* 5x4 版面配置，縮減間距與卡片高度避免滑動 */
+    .game-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; width: 100%; max-width: 1000px; }
+    
+    .card { background-color: #aed581; height: 11vh; min-height: 80px; max-height: 110px; border-radius: 8px; display: flex; justify-content: center; align-items: center; text-align: center; padding: 8px; font-size: 0.95em; font-weight: bold; color: transparent; cursor: pointer; transition: transform 0.3s, background-color 0.3s; box-shadow: 0 3px 6px rgba(0,0,0,0.1); user-select: none; line-height: 1.3; }
+    .card.flipped { background-color: #ffffff; color: #1b5e20; transform: rotateY(0deg); cursor: default; border: 2px solid #7cb342; }
+    .card.matched { background-color: #c8e6c9; color: #1b5e20; border: 2px solid #388e3c; opacity: 0.7; cursor: default; }
+    
+    /* 按鈕樣式 */
+    .btn { background-color: #ff9800; color: white; border: none; padding: 12px 28px; font-size: 1.2em; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.2s; }
+    .btn:hover { background-color: #f57c00; transform: scale(1.05); }
+    .btn-secondary { background-color: #7cb342; margin-top: 15px; display: none; }
+    .btn-secondary:hover { background-color: #689f38; }
+
+    /* 響應式：若螢幕真的太小（如直立手機），退回 4 欄或 2 欄 */
+    @media (max-width: 800px) {
+        .game-grid { grid-template-columns: repeat(4, 1fr); }
+        .intro-grid { grid-template-columns: 1fr; }
+        .card { height: 80px; font-size: 0.85em; }
+    }
 </style>
 </head>
 <body>
 
-<h1>🌿 植物觀察配對任務</h1>
-<p class="subtitle">找出「觀察方法」與對應的「植物」！</p>
-
-<div class="status-board">
-    <span>翻牌次數: <span id="moves">0</span></span>
-    <span>完成配對: <span id="matches">0</span> / 10</span>
+<!-- 第一階段：圖鑑學習區 -->
+<div id="introScreen" class="screen">
+    <h1>🌱 植物觀察特訓班</h1>
+    <p class="subtitle">出發尋找植物前，先來認識這 10 種植物的「專屬觀察重點」！</p>
+    
+    <div class="intro-grid" id="introGridContainer">
+        <!-- 圖鑑卡片將由 JS 自動生成 -->
+    </div>
+    
+    <button class="btn" onclick="startGame()">🚀 特訓完成，進入配對挑戰！</button>
 </div>
 
-<div class="grid" id="gameBoard"></div>
+<!-- 第二階段：遊戲挑戰區 -->
+<div id="gameScreen" class="screen">
+    <h1>🌿 植物觀察配對任務</h1>
+    <p class="subtitle">請翻出「植物名稱」與對應的「觀察重點」</p>
 
-<button class="btn" id="restartBtn" onclick="initGame()">🔄 再玩一次</button>
+    <div class="status-board">
+        <span>翻牌步數: <span id="moves">0</span></span>
+        <span>配對成功: <span id="matches">0</span> / 10</span>
+    </div>
+
+    <!-- 5x4 的遊戲棋盤 -->
+    <div class="game-grid" id="gameBoard"></div>
+
+    <button class="btn btn-secondary" id="restartBtn" onclick="backToIntro()">🔄 再次複習與挑戰</button>
+</div>
 
 <script>
     const pairsData = [
@@ -56,6 +94,35 @@
     let matches = 0;
     let lockBoard = false;
 
+    // 1. 初始化圖鑑區
+    function renderIntro() {
+        const container = document.getElementById("introGridContainer");
+        container.innerHTML = "";
+        pairsData.forEach(pair => {
+            container.innerHTML += `
+                <div class="intro-card">
+                    <div class="plant-name">🌿 ${pair.plant}</div>
+                    <div class="plant-action">${pair.action}</div>
+                </div>
+            `;
+        });
+    }
+
+    // 2. 切換畫面並開始遊戲
+    function startGame() {
+        document.getElementById("introScreen").style.display = "none";
+        document.getElementById("gameScreen").style.display = "flex";
+        initGame();
+    }
+
+    // 回到圖鑑區
+    function backToIntro() {
+        document.getElementById("gameScreen").style.display = "none";
+        document.getElementById("introScreen").style.display = "flex";
+        document.getElementById("restartBtn").style.display = "none";
+    }
+
+    // 3. 遊戲初始化邏輯
     function initGame() {
         const gameBoard = document.getElementById("gameBoard");
         gameBoard.innerHTML = "";
@@ -66,13 +133,13 @@
         document.getElementById("restartBtn").style.display = "none";
         cardsArray = [];
 
-        // 拆分資料成為獨立卡片
+        // 拆分資料成為 20 張獨立卡片
         pairsData.forEach(pair => {
             cardsArray.push({ id: pair.id, text: pair.action, type: 'action' });
             cardsArray.push({ id: pair.id, text: pair.plant, type: 'plant' });
         });
 
-        // 隨機打亂卡片
+        // 隨機洗牌
         cardsArray.sort(() => 0.5 - Math.random());
 
         // 生成卡片 HTML
@@ -121,9 +188,10 @@
         document.getElementById("matches").innerText = matches;
         resetBoard();
 
+        // 完成所有配對
         if (matches === pairsData.length) {
             setTimeout(() => {
-                alert(`🎉 恭喜過關！你總共用了 ${moves} 步完成所有植物觀察配對！`);
+                alert(`🎉 太厲害了！你用了 ${moves} 步完成所有特訓，現在帶著學習單出發去校園找植物吧！`);
                 document.getElementById("restartBtn").style.display = "block";
             }, 500);
         }
@@ -141,7 +209,8 @@
         [firstCard, secondCard, lockBoard] = [null, null, false];
     }
 
-    initGame();
+    // 網頁載入時先渲染圖鑑
+    renderIntro();
 </script>
 </body>
 </html>
